@@ -133,6 +133,8 @@ input:focus, select:focus { border-color: #3b82f6; }
 label.check input { width: auto; margin: 0; }
 .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .tip { margin: -2px 0 8px; font-size: 11px; color: #6f7a8d; line-height: 1.5; }
+.proto { display: flex; align-items: center; gap: 8px; margin: -2px 0 10px; font-size: 11px; color: #6f7a8d; }
+.proto b { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #4c9aff; }
 .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
 button {
   padding: 9px 16px; border-radius: 8px; border: 1px solid #2c3242;
@@ -172,21 +174,22 @@ button.ghost { padding: 4px 10px; font-size: 12px; background: transparent; }
   <div class="brand">
     <div class="logo"></div>
     <div>
-      <h1>直播盒子 <small>LIVE BOX</small></h1>
-      <p>USB 摄像头采集 · RTMP / SRT 推流 · Web 配置</p>
+      <h1><span data-i18n="brand">直播盒子</span> <small>LIVE BOX</small></h1>
+      <p data-i18n="tagline">USB 摄像头采集 · RTMP / SRT 推流 · Web 配置</p>
     </div>
   </div>
   <div class="pills">
-    <span class="pill" id="pill-cam">摄像头</span>
-    <span class="pill" id="pill-stream">推流</span>
+    <span class="pill" id="pill-cam" data-i18n="camPill">摄像头</span>
+    <span class="pill" id="pill-stream" data-i18n="streamPill">推流</span>
     <span class="pill" id="pill-web">Web</span>
+    <button class="ghost" id="btn-lang" type="button" title="Language / 语言">EN</button>
   </div>
 </header>
 
 <main>
   <section class="panel">
     <div class="panel-head">
-      <h2>实时预览</h2>
+      <h2 data-i18n="preview">实时预览</h2>
       <div class="hint" id="preview-meta">--</div>
     </div>
     <div class="preview empty" id="preview-box">
@@ -195,31 +198,31 @@ button.ghost { padding: 4px 10px; font-size: 12px; background: transparent; }
       <span class="nosignal">NO SIGNAL</span>
     </div>
     <div class="metrics">
-      <div class="metric"><span>分辨率</span><b id="m-res">--</b></div>
-      <div class="metric"><span>采集帧率</span><b id="m-camfps">--</b></div>
-      <div class="metric"><span>推流帧率</span><b id="m-pushfps">--</b></div>
-      <div class="metric"><span>推流码率</span><b id="m-kbps">--</b></div>
-      <div class="metric"><span>已推流</span><b id="m-uptime">--</b></div>
-      <div class="metric"><span>状态</span><b id="m-state">--</b></div>
+      <div class="metric"><span data-i18n="metricRes">分辨率</span><b id="m-res">--</b></div>
+      <div class="metric"><span data-i18n="metricCamFps">采集帧率</span><b id="m-camfps">--</b></div>
+      <div class="metric"><span data-i18n="metricPushFps">推流帧率</span><b id="m-pushfps">--</b></div>
+      <div class="metric"><span data-i18n="metricKbps">推流码率</span><b id="m-kbps">--</b></div>
+      <div class="metric"><span data-i18n="metricUptime">已推流</span><b id="m-uptime">--</b></div>
+      <div class="metric"><span data-i18n="metricState">状态</span><b id="m-state">--</b></div>
     </div>
     <div class="streamline">
-      <span>推流地址</span><code id="m-url">未配置</code>
+      <span data-i18n="streamUrl">推流地址</span><code id="m-url">未配置</code>
     </div>
   </section>
 
   <section class="panel">
     <div class="panel-head">
-      <h2>直播配置</h2>
-      <div class="hint">保存后自动应用</div>
+      <h2 data-i18n="configTitle">直播配置</h2>
+      <div class="hint" data-i18n="autoApply">保存后自动应用</div>
     </div>
 
     <div class="group">
-      <h3>采集设置</h3>
-      <label>摄像头设备
+      <h3 data-i18n="captureSection">采集设置</h3>
+      <label><span data-i18n="cameraDevice">摄像头设备</span>
         <input id="cam-device" placeholder="auto">
       </label>
       <div class="row">
-        <label>分辨率
+        <label><span data-i18n="resolution">分辨率</span>
           <select id="cam-res">
             <option value="1280x720">1280x720</option>
             <option value="960x540">960x540</option>
@@ -227,87 +230,88 @@ button.ghost { padding: 4px 10px; font-size: 12px; background: transparent; }
             <option value="640x480">640x480</option>
           </select>
         </label>
-        <label>帧率
+        <label><span data-i18n="frameRate">帧率</span>
           <input id="cam-fps" type="number" min="5" max="30" step="1">
         </label>
       </div>
-      <label>像素格式
+      <label><span data-i18n="pixelFormat">像素格式</span>
         <select id="cam-fourcc">
           <option value="MJPG">MJPG</option>
           <option value="YUYV">YUYV</option>
         </select>
       </label>
-      <label>画面旋转
+      <label><span data-i18n="rotation">画面旋转</span>
         <select id="cam-rotate">
-          <option value="0">0°（横装）</option>
-          <option value="90">顺时针 90°</option>
-          <option value="180">180°（倒装）</option>
-          <option value="270">逆时针 90°</option>
+          <option value="0" data-i18n="rot0">0°（横装）</option>
+          <option value="90" data-i18n="rot90">顺时针 90°</option>
+          <option value="180" data-i18n="rot180">180°（倒装）</option>
+          <option value="270" data-i18n="rot270">逆时针 90°</option>
         </select>
       </label>
     </div>
 
     <div class="group">
-      <h3>推流设置</h3>
-      <label>推流地址
+      <h3 data-i18n="streamSection">推流设置</h3>
+      <label><span data-i18n="streamUrl">推流地址</span>
         <input id="st-url" placeholder="rtmp://live-push.example.com/live/your_key">
       </label>
-      <p class="tip">支持 rtmp:// rtmps:// srt://，地址请从直播平台后台获取</p>
+      <p class="tip" data-i18n="streamTip">更换协议只需改地址前缀：rtmp://、rtmps://、srt://，地址请从直播平台后台获取</p>
+      <div class="proto"><span data-i18n="protocol">协议</span><b id="st-proto">--</b><span data-i18n="protoAuto">由地址前缀自动识别</span></div>
       <div class="row">
-        <label>编码器
+        <label><span data-i18n="encoder">编码器</span>
           <select id="st-encoder">
-            <option value="libx264">libx264（软编）</option>
-            <option value="mpph264enc">mpph264enc（RK MPP 硬编）</option>
+            <option value="libx264" data-i18n="encSoft">libx264（软编）</option>
+            <option value="mpph264enc" data-i18n="encHard">mpph264enc（RK MPP 硬编）</option>
           </select>
         </label>
-        <label>码率 (kbps)
+        <label><span data-i18n="bitrate">码率 (kbps)</span>
           <input id="st-bitrate" type="number" min="300" max="12000" step="100">
         </label>
       </div>
       <div class="row">
-        <label>关键帧间隔 (s)
+        <label><span data-i18n="keyframe">关键帧间隔 (s)</span>
           <input id="st-gop" type="number" min="1" max="10">
         </label>
         <label class="check" style="margin-top:24px">
-          <input id="st-auto" type="checkbox"> 断线自动重连
+          <input id="st-auto" type="checkbox"> <span data-i18n="autoReconnect">断线自动重连</span>
         </label>
       </div>
     </div>
 
     <div class="group">
-      <h3>音频</h3>
-      <label class="check"><input id="au-enabled" type="checkbox"> 推流附带音频</label>
-      <label>音频设备
+      <h3 data-i18n="audioSection">音频</h3>
+      <label class="check"><input id="au-enabled" type="checkbox"> <span data-i18n="includeAudio">推流附带音频</span></label>
+      <label><span data-i18n="audioDevice">音频设备</span>
         <input id="au-device" placeholder="plughw:0,0">
       </label>
-      <p class="tip">arecord -l 查看设备；板载声卡常见为 plughw:0,0</p>
+      <p class="tip" data-i18n="audioTip">arecord -l 查看设备；板载声卡常见为 plughw:0,0</p>
     </div>
 
     <div class="group">
-      <h3>Web 预览</h3>
+      <h3 data-i18n="webPreview">Web 预览</h3>
       <div class="row">
-        <label>预览帧率
+        <label><span data-i18n="previewFps">预览帧率</span>
           <input id="web-fps" type="number" min="1" max="30">
         </label>
-        <label>画质 (30-95)
+        <label><span data-i18n="quality">画质 (30-95)</span>
           <input id="web-quality" type="number" min="30" max="95">
         </label>
       </div>
     </div>
 
     <div class="actions">
-      <button class="primary" id="btn-save">保存并应用</button>
-      <button class="success" id="btn-start">开始推流</button>
-      <button class="danger" id="btn-stop">停止推流</button>
+      <button class="primary" id="btn-save" data-i18n="save">保存并应用</button>
+      <button class="success" id="btn-start" data-i18n="start">开始推流</button>
+      <button class="danger" id="btn-stop" data-i18n="stop">停止推流</button>
     </div>
   </section>
 
   <section class="panel log-panel">
     <div class="panel-head">
-      <h2>运行日志</h2>
-      <button class="ghost" id="btn-refresh">刷新</button>
+      <h2 data-i18n="logsTitle">运行日志</h2>
+      <button class="ghost" id="btn-refresh" data-i18n="refresh">刷新</button>
     </div>
-    <pre id="logs">加载中…</pre>
+    <pre id="logs" data-i18n="loading">加载中…</pre>
   </section>
 </main>
 
@@ -317,6 +321,119 @@ button.ghost { padding: 4px 10px; font-size: 12px; background: transparent; }
 const $ = (id) => document.getElementById(id);
 let lastCamOpened = false;
 let configLoaded = false;
+let lastStatus = null;
+
+const I18N = {
+  zh: {
+    docTitle: '直播盒子 · Live Box',
+    brand: '直播盒子',
+    tagline: 'USB 摄像头采集 · RTMP / SRT 推流 · Web 配置',
+    camPill: '摄像头', streamPill: '推流',
+    preview: '实时预览', configTitle: '直播配置', autoApply: '保存后自动应用',
+    metricRes: '分辨率', metricCamFps: '采集帧率', metricPushFps: '推流帧率',
+    metricKbps: '推流码率', metricUptime: '已推流', metricState: '状态',
+    streamUrl: '推流地址', notConfigured: '未配置',
+    captureSection: '采集设置', cameraDevice: '摄像头设备', resolution: '分辨率',
+    frameRate: '帧率', pixelFormat: '像素格式', rotation: '画面旋转',
+    rot0: '0°（横装）', rot90: '顺时针 90°', rot180: '180°（倒装）', rot270: '逆时针 90°',
+    streamSection: '推流设置', encoder: '编码器',
+    encSoft: 'libx264（软编）', encHard: 'mpph264enc（RK MPP 硬编）',
+    bitrate: '码率 (kbps)', keyframe: '关键帧间隔 (s)', autoReconnect: '断线自动重连',
+    streamTip: '更换协议只需改地址前缀：rtmp://、rtmps://、srt://，地址请从直播平台后台获取',
+    protocol: '协议', protoAuto: '由地址前缀自动识别',
+    audioSection: '音频', includeAudio: '推流附带音频', audioDevice: '音频设备',
+    audioTip: 'arecord -l 查看设备；板载声卡常见为 plughw:0,0',
+    webPreview: 'Web 预览', previewFps: '预览帧率', quality: '画质 (30-95)',
+    save: '保存并应用', start: '开始推流', stop: '停止推流',
+    logsTitle: '运行日志', refresh: '刷新', loading: '加载中…', noLogs: '暂无日志',
+    camOnline: '摄像头 {w}x{h}', camOffline: '摄像头离线', waitingCamera: '等待摄像头',
+    webDisconnected: 'Web 连接中断', parseError: '响应解析失败',
+    saved: '配置已保存', started: '开始推流', stopped: '已停止推流',
+    stateIdle: '未推流', stateConnecting: '连接中', stateLive: '推流中',
+    stateRetrying: '重连中', stateError: '推流异常', stateUnknown: '未知'
+  },
+  en: {
+    docTitle: 'Live Box · Web Console',
+    brand: 'Live Box',
+    tagline: 'USB camera capture · RTMP / SRT streaming · Web configuration',
+    camPill: 'Camera', streamPill: 'Stream',
+    preview: 'Live Preview', configTitle: 'Stream Settings', autoApply: 'Applied automatically after saving',
+    metricRes: 'Resolution', metricCamFps: 'Capture FPS', metricPushFps: 'Stream FPS',
+    metricKbps: 'Bitrate', metricUptime: 'Uptime', metricState: 'Status',
+    streamUrl: 'Stream URL', notConfigured: 'Not configured',
+    captureSection: 'Capture', cameraDevice: 'Camera device', resolution: 'Resolution',
+    frameRate: 'Frame rate', pixelFormat: 'Pixel format', rotation: 'Rotation',
+    rot0: '0° (landscape)', rot90: '90° clockwise', rot180: '180° (upside down)', rot270: '90° counter-clockwise',
+    streamSection: 'Streaming', encoder: 'Encoder',
+    encSoft: 'libx264 (software)', encHard: 'mpph264enc (RK MPP hardware)',
+    bitrate: 'Bitrate (kbps)', keyframe: 'Keyframe interval (s)', autoReconnect: 'Auto reconnect',
+    streamTip: 'To switch protocols, change the URL prefix: rtmp://, rtmps://, srt:// — get the URL from your platform console',
+    protocol: 'Protocol', protoAuto: 'detected from the URL prefix',
+    audioSection: 'Audio', includeAudio: 'Include audio in stream', audioDevice: 'Audio device',
+    audioTip: 'Run arecord -l to list devices; the onboard sound card is usually plughw:0,0',
+    webPreview: 'Web Preview', previewFps: 'Preview FPS', quality: 'Quality (30-95)',
+    save: 'Save and apply', start: 'Start streaming', stop: 'Stop streaming',
+    logsTitle: 'Logs', refresh: 'Refresh', loading: 'Loading…', noLogs: 'No logs yet',
+    camOnline: 'Camera {w}x{h}', camOffline: 'Camera offline', waitingCamera: 'Waiting for camera',
+    webDisconnected: 'Web disconnected', parseError: 'Failed to parse response',
+    saved: 'Configuration saved', started: 'Streaming started', stopped: 'Streaming stopped',
+    stateIdle: 'Idle', stateConnecting: 'Connecting', stateLive: 'Live',
+    stateRetrying: 'Reconnecting', stateError: 'Error', stateUnknown: 'Unknown'
+  }
+};
+
+const STATE_KEYS = {
+  idle: 'stateIdle', connecting: 'stateConnecting', live: 'stateLive',
+  retrying: 'stateRetrying', error: 'stateError'
+};
+
+let lang = new URLSearchParams(location.search).get('lang')
+  || localStorage.getItem('livebox-lang')
+  || ((navigator.language || 'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en');
+if (!I18N[lang]) lang = 'zh';
+
+function t(key, vars) {
+  let s = (I18N[lang] && I18N[lang][key]) || I18N.zh[key] || key;
+  if (vars) {
+    Object.keys(vars).forEach((k) => {
+      s = s.split('{' + k + '}').join(String(vars[k]));
+    });
+  }
+  return s;
+}
+
+function stateLabel(state) {
+  return STATE_KEYS[state] ? t(STATE_KEYS[state]) : (state || t('stateUnknown'));
+}
+
+function updateProto() {
+  const v = ($('st-url').value || '').trim().toLowerCase();
+  const p = v.startsWith('rtmps://') ? 'RTMPS'
+    : v.startsWith('rtmp://') ? 'RTMP'
+    : v.startsWith('srt://') ? 'SRT' : '--';
+  $('st-proto').textContent = p;
+}
+
+$('st-url').addEventListener('input', updateProto);
+
+function applyLang() {
+  document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  document.title = t('docTitle');
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  $('btn-lang').textContent = lang === 'zh' ? 'EN' : '中文';
+  if (lastStatus) render(lastStatus);
+  else {
+    $('m-url').textContent = t('notConfigured');
+  }
+}
+
+$('btn-lang').onclick = () => {
+  lang = lang === 'zh' ? 'en' : 'zh';
+  localStorage.setItem('livebox-lang', lang);
+  applyLang();
+};
 
 function toast(msg, ok = true) {
   const el = $('toast');
@@ -328,7 +445,7 @@ function toast(msg, ok = true) {
 
 async function api(path, options) {
   const res = await fetch(path, options);
-  const data = await res.json().catch(() => ({ ok: false, message: '响应解析失败' }));
+  const data = await res.json().catch(() => ({ ok: false, message: t('parseError') }));
   if (!res.ok || data.ok === false) {
     throw new Error(data.message || ('HTTP ' + res.status));
   }
@@ -348,6 +465,7 @@ function setForm(cfg) {
   $('cam-fourcc').value = (cam.fourcc || 'MJPG').toUpperCase();
   $('cam-rotate').value = String(cam.rotate || 0);
   $('st-url').value = st.url || '';
+  updateProto();
   $('st-encoder').value = st.encoder || 'libx264';
   $('st-bitrate').value = st.bitrate_kbps || 2500;
   $('st-gop').value = st.gop_seconds || 2;
@@ -397,11 +515,6 @@ function fmtDur(sec) {
   return h > 0 ? (h + ':' + pad(m) + ':' + pad(s)) : (pad(m) + ':' + pad(s));
 }
 
-const STATE_LABEL = {
-  idle: '未推流', connecting: '连接中', live: '推流中',
-  retrying: '重连中', error: '推流异常'
-};
-
 function setPill(id, text, cls) {
   const el = $(id);
   el.textContent = text;
@@ -409,26 +522,27 @@ function setPill(id, text, cls) {
 }
 
 function render(s) {
+  lastStatus = s;
   const cam = s.camera || {};
   const st = s.stream || {};
   const web = s.web || {};
 
-  setPill('pill-cam', cam.opened ? ('摄像头 ' + cam.width + 'x' + cam.height) : '摄像头离线',
+  setPill('pill-cam', cam.opened ? t('camOnline', { w: cam.width, h: cam.height }) : t('camOffline'),
           cam.opened ? 'ok' : 'bad');
-  setPill('pill-stream', STATE_LABEL[st.state] || st.state || '未知',
+  setPill('pill-stream', stateLabel(st.state),
           st.state === 'live' ? 'ok' : (st.state === 'error' ? 'bad' : 'warn'));
   setPill('pill-web', 'Web :' + web.port, 'ok');
 
   $('preview-meta').textContent = cam.opened
     ? (cam.width + 'x' + cam.height + ' · ' + (cam.fps || 0).toFixed(1) + ' fps')
-    : (cam.error || '等待摄像头');
+    : (cam.error || t('waitingCamera'));
   $('m-res').textContent = cam.opened ? (cam.width + 'x' + cam.height) : '--';
   $('m-camfps').textContent = cam.opened ? (cam.fps || 0).toFixed(1) : '--';
   $('m-pushfps').textContent = st.active ? (st.sent_fps || 0).toFixed(1) : '--';
   $('m-kbps').textContent = st.active ? (Math.round(st.kbps || 0) + ' kbps') : '--';
   $('m-uptime').textContent = st.active ? fmtDur(st.uptime_s) : '--';
-  $('m-state').textContent = STATE_LABEL[st.state] || st.state || '--';
-  $('m-url').textContent = st.url || '未配置';
+  $('m-state').textContent = st.state ? stateLabel(st.state) : '--';
+  $('m-url').textContent = st.url || t('notConfigured');
 
   const box = $('preview-box');
   if (cam.opened) box.classList.remove('empty');
@@ -449,7 +563,7 @@ function render(s) {
   const logs = (s.logs || []).join(String.fromCharCode(10));
   const el = $('logs');
   const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-  el.textContent = logs || '暂无日志';
+  el.textContent = logs || t('noLogs');
   if (atBottom) el.scrollTop = el.scrollHeight;
 }
 
@@ -457,7 +571,7 @@ async function poll() {
   try {
     render(await api('/api/status'));
   } catch (e) {
-    setPill('pill-web', 'Web 连接中断', 'bad');
+    setPill('pill-web', t('webDisconnected'), 'bad');
   }
 }
 
@@ -478,7 +592,7 @@ $('btn-save').onclick = async () => {
       body: JSON.stringify(collectForm())
     });
     if (d.config) setForm(d.config);
-    toast(d.message || '配置已保存');
+    toast(t('saved'));
     poll();
   } catch (e) {
     toast(e.message, false);
@@ -492,7 +606,7 @@ $('btn-start').onclick = async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'start' })
     });
-    toast(d.message || '开始推流');
+    toast(t('started'));
     poll();
   } catch (e) {
     toast(e.message, false);
@@ -506,7 +620,7 @@ $('btn-stop').onclick = async () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'stop' })
     });
-    toast(d.message || '已停止推流');
+    toast(t('stopped'));
     poll();
   } catch (e) {
     toast(e.message, false);
@@ -515,6 +629,7 @@ $('btn-stop').onclick = async () => {
 
 $('btn-refresh').onclick = poll;
 
+applyLang();
 loadConfig();
 poll();
 setInterval(poll, 1500);
@@ -551,15 +666,15 @@ def _make_handler(app):
             try:
                 length = int(self.headers.get("Content-Length") or 0)
             except ValueError:
-                raise ValueError("Content-Length 无效")
+                raise ValueError("Invalid Content-Length")
             if length <= 0:
-                raise ValueError("请求体为空")
+                raise ValueError("Empty request body")
             if length > 262144:
-                raise ValueError("请求体过大")
+                raise ValueError("Request body too large")
             try:
                 return json.loads(self.rfile.read(length).decode("utf-8"))
             except (UnicodeDecodeError, json.JSONDecodeError):
-                raise ValueError("JSON 格式错误")
+                raise ValueError("Invalid JSON")
 
         # ---------------- GET ----------------
         def do_GET(self):                          # noqa: N802
@@ -577,7 +692,7 @@ def _make_handler(app):
                 jpg = app.camera.snapshot_jpeg(
                     int(app.cfg["web"].get("preview_quality", 70)))
                 if jpg is None:
-                    self._send_json({"ok": False, "message": "无图像"}, 503)
+                    self._send_json({"ok": False, "message": "No image available"}, 503)
                 else:
                     self._send_bytes(jpg, "image/jpeg")
             elif path == "/favicon.ico":
@@ -601,7 +716,7 @@ def _make_handler(app):
                     elif action == "stop":
                         ok, msg = app.stop_stream()
                     else:
-                        raise ValueError("action 必须是 start 或 stop")
+                        raise ValueError("action must be start or stop")
                     self._send_json({"ok": ok, "message": msg},
                                     200 if ok else 400)
                 else:
@@ -609,8 +724,8 @@ def _make_handler(app):
             except ValueError as exc:
                 self._send_json({"ok": False, "message": str(exc)}, 400)
             except Exception as exc:               # noqa: BLE001
-                app.log(f"[web] 请求处理异常: {exc}")
-                self._send_json({"ok": False, "message": "服务器内部错误"}, 500)
+                app.log(f"[web] Request handler error: {exc}")
+                self._send_json({"ok": False, "message": "Internal server error"}, 500)
 
         # ---------------- MJPEG ----------------
         def _send_mjpeg(self):
@@ -661,13 +776,13 @@ class WebServer:
             self.httpd = ThreadingHTTPServer((self.host, self.port),
                                              _make_handler(self.app))
         except OSError as exc:
-            self._log(f"[web] 端口 {self.port} 启动失败: {exc}")
+            self._log(f"[web] Failed to start on port {self.port}: {exc}")
             return False
         self.httpd.daemon_threads = True
         self._thread = threading.Thread(target=self.httpd.serve_forever,
                                         name="web", daemon=True)
         self._thread.start()
-        self._log(f"[web] 控制台已启动: http://{self.host}:{self.port}")
+        self._log(f"[web] Console started: http://{self.host}:{self.port}")
         return True
 
     def stop(self):

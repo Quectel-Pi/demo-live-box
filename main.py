@@ -132,42 +132,42 @@ def normalize_config(cfg):
 def validate_config(cfg):
     cam = cfg["camera"]
     if not (160 <= cam["width"] <= 1920 and 160 <= cam["height"] <= 1080):
-        raise ValueError("分辨率需在 160x160 ~ 1920x1080 之间")
+        raise ValueError("Resolution must be between 160x160 and 1920x1080")
     if cam["width"] % 2 or cam["height"] % 2:
-        raise ValueError("分辨率宽高必须为偶数")
+        raise ValueError("Resolution width and height must be even numbers")
     if not (1 <= cam["fps"] <= 60):
-        raise ValueError("帧率需在 1~60 之间")
+        raise ValueError("Frame rate must be between 1 and 60")
     if cam["fourcc"] not in ("MJPG", "YUYV"):
-        raise ValueError("像素格式仅支持 MJPG / YUYV")
+        raise ValueError("Pixel format must be MJPG or YUYV")
     if cam["rotate"] not in (0, 90, 180, 270):
-        raise ValueError("画面旋转仅支持 0 / 90 / 180 / 270")
+        raise ValueError("Rotation must be 0 / 90 / 180 / 270")
 
     st = cfg["stream"]
     url = st["url"]
     if url and not url.startswith(("rtmp://", "rtmps://", "srt://")):
-        raise ValueError("推流地址需以 rtmp:// / rtmps:// / srt:// 开头")
+        raise ValueError("Stream URL must start with rtmp://, rtmps://, or srt://")
     if st["encoder"] not in ("libx264", "h264_v4l2m2m", "mpph264enc"):
-        raise ValueError("编码器仅支持 libx264 / h264_v4l2m2m / mpph264enc")
+        raise ValueError("Encoder must be libx264, h264_v4l2m2m, or mpph264enc")
     if not (200 <= st["bitrate_kbps"] <= 20000):
-        raise ValueError("码率需在 200~20000 kbps 之间")
+        raise ValueError("Bitrate must be between 200 and 20000 kbps")
     if not (1 <= st["gop_seconds"] <= 10):
-        raise ValueError("关键帧间隔需在 1~10 秒之间")
+        raise ValueError("Keyframe interval must be between 1 and 10 seconds")
     audio = st["audio"]
     if audio["enabled"] and not audio["device"]:
-        raise ValueError("启用音频时必须填写音频设备")
+        raise ValueError("Audio device is required when audio is enabled")
     if audio["enabled"] and any(
             ch not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
                       "0123456789_:.,-"
             for ch in audio["device"]):
-        raise ValueError("音频设备名包含非法字符")
+        raise ValueError("Audio device name contains invalid characters")
 
     web = cfg["web"]
     if not (1 <= web["preview_fps"] <= 30):
-        raise ValueError("Web 预览帧率需在 1~30 之间")
+        raise ValueError("Web preview frame rate must be between 1 and 30")
     if not (30 <= web["preview_quality"] <= 95):
-        raise ValueError("Web 预览画质需在 30~95 之间")
+        raise ValueError("Web preview quality must be between 30 and 95")
     if not (1 <= cfg["preview"]["ui_fps"] <= 30):
-        raise ValueError("本地预览帧率需在 1~30 之间")
+        raise ValueError("Local preview frame rate must be between 1 and 30")
 
 
 def get_local_ip():
@@ -223,33 +223,33 @@ class App:
     # ---------------- 生命周期 ----------------
     def start(self):
         self.log("-" * 58)
-        self.log("直播盒子 Demo 启动")
+        self.log("Live Box demo starting")
         self.camera.start()
         if self.camera.wait_ready(6):
             st = self.camera.state()
-            self.log(f"[camera] {st['device']} {st['width']}x{st['height']} 就绪")
+            self.log(f"[camera] {st['device']} {st['width']}x{st['height']} ready")
         else:
-            self.log("[camera] 摄像头未就绪，Web 页面会持续显示 NO SIGNAL")
+            self.log("[camera] Camera not ready, the web page will keep showing NO SIGNAL")
 
         self.web = WebServer(self, self.cfg["web"], log=self.log)
         if not self.web.start():
-            self.log(f"[web] Web 控制台启动失败，端口 {self.cfg['web']['port']}")
+            self.log(f"[web] Failed to start web console on port {self.cfg['web']['port']}")
 
-        self.log(f"[web] 预览 / 配置页面: {self.urls[0]}")
+        self.log(f"[web] Preview / configuration page: {self.urls[0]}")
         if self.cfg["stream"]["auto_start"] and self.cfg["stream"]["url"]:
             ok, msg = self.start_stream()
-            self.log(f"[stream] 自动推流: {msg}")
+            self.log(f"[stream] Auto-start: {msg}")
 
     def shutdown(self, *_):
         if self._closed.is_set():
             return
         self._closed.set()
         self.stop_event.set()
-        self.log("[main] 正在退出...")
+        self.log("[main] Shutting down...")
         try:
             self.streamer.stop()
         except Exception as exc:                   # noqa: BLE001
-            self.log(f"[main] 停止推流异常: {exc}")
+            self.log(f"[main] Error while stopping stream: {exc}")
         if self.web is not None:
             try:
                 self.web.stop()
@@ -259,25 +259,25 @@ class App:
             self.camera.stop()
         except Exception:                          # noqa: BLE001
             pass
-        self.log("[main] 已退出")
+        self.log("[main] Exited")
 
     # ---------------- 推流控制 ----------------
     def start_stream(self):
         url = self.cfg["stream"]["url"]
         if not url:
-            return False, "请先填写推流地址"
+            return False, "Please enter a stream URL first"
         self.streamer.update_config(self.cfg["stream"])
         ok, msg = self.streamer.start()
         if ok:
-            self.log(f"[stream] 推流目标 {mask_url(url)}")
+            self.log(f"[stream] Stream target {mask_url(url)}")
         else:
             self.log(f"[stream] {msg}")
         return ok, msg
 
     def stop_stream(self):
         self.streamer.stop()
-        self.log("[stream] 已停止推流")
-        return True, "已停止推流"
+        self.log("[stream] Streaming stopped")
+        return True, "Streaming stopped"
 
     def toggle_stream(self):
         if self.streamer.state()["active"]:
@@ -299,7 +299,7 @@ class App:
 
     def update_config(self, payload):
         if not isinstance(payload, dict):
-            raise ValueError("配置格式错误")
+            raise ValueError("Invalid configuration format")
         new_cfg = copy.deepcopy(self.cfg)
         deep_merge(new_cfg, payload)
         normalize_config(new_cfg)
@@ -312,8 +312,8 @@ class App:
                 f.write("\n")
             os.replace(tmp, self.cfg_path)
         except OSError as exc:
-            self.log(f"[config] 保存失败: {exc}")
-            return False, f"配置保存失败: {exc}"
+            self.log(f"[config] Failed to save: {exc}")
+            return False, f"Failed to save configuration: {exc}"
 
         old = self.cfg
         cam_changed = old["camera"] != new_cfg["camera"]
@@ -321,7 +321,7 @@ class App:
         was_active = self.streamer.state()["active"]
         self.cfg = new_cfg
         self.streamer.update_config(new_cfg["stream"])
-        self.log("[config] 配置已保存")
+        self.log("[config] Configuration saved")
 
         if cam_changed:
             self.camera.update_config(new_cfg["camera"])
@@ -329,19 +329,19 @@ class App:
                 self.streamer.stop()
                 threading.Thread(target=self._restore_stream,
                                  name="restore-stream", daemon=True).start()
-                return True, "配置已保存，摄像头重启中，推流稍后自动恢复", new_cfg
-            return True, "配置已保存，摄像头重启中", new_cfg
+                return True, "Configuration saved; camera restarting, streaming will resume shortly", new_cfg
+            return True, "Configuration saved; camera restarting", new_cfg
 
         if stream_changed and was_active:
             self.streamer.stop()
             self.streamer.start()
-            return True, "配置已保存，推流已按新参数重启", new_cfg
-        return True, "配置已保存", new_cfg
+            return True, "Configuration saved; streaming restarted with new settings", new_cfg
+        return True, "Configuration saved", new_cfg
 
     def _restore_stream(self):
         self.camera.wait_ready(8)
         ok, msg = self.streamer.start()
-        self.log(f"[main] 推流恢复: {msg}")
+        self.log(f"[main] Stream resumed: {msg}")
 
     # ---------------- 无界面运行 ----------------
     def headless_loop(self):
@@ -359,12 +359,12 @@ class App:
 
 def main():
     base = os.path.dirname(os.path.abspath(__file__))
-    parser = argparse.ArgumentParser(description="直播盒子 Demo (USB 摄像头推流)")
+    parser = argparse.ArgumentParser(description="Live Box demo (USB camera streaming)")
     parser.add_argument("--config", default=os.path.join(base, "config.json"))
-    parser.add_argument("--camera", help="覆盖摄像头设备, 如 auto / 73 / /dev/video73")
-    parser.add_argument("--url", help="覆盖推流地址")
-    parser.add_argument("--start", action="store_true", help="启动后自动推流")
-    parser.add_argument("--no-ui", action="store_true", help="不打开本地预览窗口")
+    parser.add_argument("--camera", help="Override camera device, e.g. auto / 73 / /dev/video73")
+    parser.add_argument("--url", help="Override stream URL")
+    parser.add_argument("--start", action="store_true", help="Start streaming automatically")
+    parser.add_argument("--no-ui", action="store_true", help="Do not open the local preview window")
     args = parser.parse_args()
 
     cfg = load_config(args.config)
@@ -378,7 +378,7 @@ def main():
     try:
         validate_config(cfg)
     except ValueError as exc:
-        print(f"配置错误: {exc}")
+        print(f"Configuration error: {exc}")
         return 2
 
     app = App(cfg, args.config)
@@ -395,7 +395,7 @@ def main():
                 app.headless_loop()
         else:
             if not args.no_ui and cfg["preview"]["enabled"]:
-                app.log("[ui] 未检测到 DISPLAY，使用 Web 预览 (无本地窗口)")
+                app.log("[ui] DISPLAY not found, using web preview (no local window)")
             app.headless_loop()
     except KeyboardInterrupt:
         pass

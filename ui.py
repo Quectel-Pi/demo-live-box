@@ -67,7 +67,7 @@ def run_preview(app, cfg, log=None):
     try:
         cv2.namedWindow(name, cv2.WINDOW_AUTOSIZE | cv2.WINDOW_GUI_NORMAL)
     except Exception as exc:                      # noqa: BLE001
-        log(f"[ui] 无法创建预览窗口: {exc}")
+        log(f"[ui] Unable to create preview window: {exc}")
         return False
 
     last_paint = 0.0
@@ -102,9 +102,9 @@ def run_preview(app, cfg, log=None):
                 ok, msg = app.streamer.toggle()
                 log(f"[ui] {msg}")
             elif key == ord("r"):
-                log(f"[ui] Web 控制台: {app.urls[0]}")
+                log(f"[ui] Web console: {app.urls[0]}")
     except Exception as exc:                      # noqa: BLE001
-        log(f"[ui] 预览窗口异常: {exc}")
+        log(f"[ui] Preview window error: {exc}")
         return False
     finally:
         try:
