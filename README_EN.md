@@ -152,7 +152,9 @@ Common stream URL formats:
 
 > Always use the stream information shown in the platform's creator dashboard;
 > URLs and keys can change per session. The Web console masks keys in logs and
-> status output.
+> status output. The protocol is chosen automatically from the URL prefix
+> (`rtmp://` / `rtmps://` for RTMP, `srt://` for SRT) — there is no separate
+> switch; just change the prefix.
 
 ## Configuration (config.json)
 

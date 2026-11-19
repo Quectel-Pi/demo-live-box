@@ -144,6 +144,7 @@ MJPEG 预览和全部配置项。端口可通过 `config.json` 的 `web.port` �
 | 自建 SRS / MediaMTX | `rtmp://<ip>:1935/live/test` 或 `srt://<ip>:10080` |
 
 > 推流地址与密钥以平台后台“推流信息”为准，且可能随开播场次变化。
+> 协议由地址前缀自动选择（`rtmp://` / `rtmps://` 走 RTMP，`srt://` 走 SRT），无需单独开关，换协议只需换地址前缀。
 > Web 控制台的运行日志和状态区会对密钥做打码处理。
 
 ## 参数说明（config.json）

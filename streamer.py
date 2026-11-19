@@ -105,7 +105,7 @@ class Streamer:
         cfg = self.config()
         url = (url or cfg["url"]).strip()
         if not url:
-            raise ValueError("未配置推流地址")
+            raise ValueError("Stream URL is not configured")
         if fmt is None:
             fmt = "flv" if url.startswith(("rtmp://", "rtmps://")) else "mpegts"
 
@@ -156,10 +156,10 @@ class Streamer:
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=2)
         if self._thread and self._thread.is_alive():
-            return False, "上一路推流尚未退出"
+            return False, "Previous streaming session is still exiting"
         cfg = self.config()
         if not cfg["url"]:
-            return False, "请先填写推流地址"
+            return False, "Please enter a stream URL first"
         self._stop.clear()
         with self._lock:
             self._state.update(active=True, state="connecting",
@@ -168,8 +168,8 @@ class Streamer:
         self._thread = threading.Thread(target=self._loop, name="streamer",
                                         daemon=True)
         self._thread.start()
-        self._log(f"[stream] 开始推流 -> {mask_url(cfg['url'])}")
-        return True, "开始推流"
+        self._log(f"[stream] Starting stream -> {mask_url(cfg['url'])}")
+        return True, "Streaming started"
 
     def stop(self):
         self._stop.set()
@@ -196,7 +196,7 @@ class Streamer:
     def toggle(self):
         if self.state()["active"]:
             self.stop()
-            return True, "已停止推流"
+            return True, "Streaming stopped"
         return self.start()
 
     # ---------------- 内部循环 ----------------
@@ -215,7 +215,7 @@ class Streamer:
                 return
             delay = max(0.5, self.config()["retry_delay_s"])
             self._set(state="retrying")
-            self._log(f"[stream] {delay:.0f}s 后重连")
+            self._log(f"[stream] Reconnecting in {delay:.0f}s")
             if self._stop.wait(delay):
                 break
         self._set(active=False, state="idle")
@@ -224,7 +224,7 @@ class Streamer:
         cam = self.camera.state()
         width, height = int(cam["width"]), int(cam["height"])
         if width <= 0 or height <= 0:
-            raise RuntimeError("摄像头未就绪，无法推流")
+            raise RuntimeError("Camera is not ready; cannot stream")
 
         encoder = self.config()["encoder"]
         if Gst is not None and encoder in ("libx264", "mpph264enc"):
@@ -233,8 +233,8 @@ class Streamer:
             # GStreamer（x264enc 就是 libx264），音视频都能稳定出流
             return self._run_gst(width, height, encoder)
         if encoder == "mpph264enc":
-            self._log(f"[stream] GStreamer 不可用（{_GST_ERROR}），"
-                      "回退 libx264 软编")
+            self._log(f"[stream] GStreamer unavailable ({_GST_ERROR}), "
+                      "falling back to libx264")
 
         cmd = self.build_cmd(width, height)
         self._log("[stream] " + " ".join(
@@ -271,7 +271,8 @@ class Streamer:
                     time.sleep(0.02)
                     continue
                 if frame.shape[1] != width or frame.shape[0] != height:
-                    raise RuntimeError("采集分辨率变化，需重新建立推流")
+                    raise RuntimeError("Capture resolution changed; "
+                                       "streaming must be restarted")
 
                 # 采集帧率低于推流帧率时复用上一帧，保证 ffmpeg 输入节奏稳定
                 if seq != last_seq:
@@ -322,9 +323,9 @@ class Streamer:
             reader.join(timeout=1)
             progress.join(timeout=1)
             if self._stop.is_set():
-                self._log(f"[stream] 已停止，共发送 {sent} 帧")
+                self._log(f"[stream] Stopped, {sent} frames sent")
             else:
-                self._log(f"[stream] ffmpeg 退出 code={proc.returncode}")
+                self._log(f"[stream] ffmpeg exited with code={proc.returncode}")
 
     # ---------------- GStreamer / Rockchip MPP 编解码 ----------------
     def _gst_desc(self, width, height, encoder="mpph264enc"):
@@ -361,21 +362,30 @@ class Streamer:
                 f"voaacenc bitrate={audio['bitrate_kbps'] * 1000} ! "
                 "aacparse ! mux. "
             )
-        desc += "flvmux name=mux streamable=true ! rtmpsink name=sink sync=false"
+        # 协议由地址前缀决定，无需单独开关：rtmp(s) 用 FLV/rtmpsink，
+        # srt 用 MPEG-TS/srtsink
+        if cfg["url"].strip().lower().startswith("srt://"):
+            desc += "mpegtsmux name=mux ! srtsink name=sink sync=false"
+        else:
+            desc += ("flvmux name=mux streamable=true ! "
+                     "rtmpsink name=sink sync=false")
         return desc
 
     def _run_gst(self, width, height, encoder="mpph264enc"):
         cfg = self.config()
-        kind = ("硬编 mpph264enc" if encoder == "mpph264enc"
-                else f"软编 x264enc({cfg['preset']})")
+        kind = ("hardware mpph264enc" if encoder == "mpph264enc"
+                else f"software x264enc({cfg['preset']})")
         self._log(f"[stream] GStreamer {kind} "
                   f"{cfg['bitrate_kbps']}kbps -> {mask_url(cfg['url'])}")
 
         pipeline = Gst.parse_launch(self._gst_desc(width, height, encoder))
         src = pipeline.get_by_name("src")
         sink = pipeline.get_by_name("sink")
-        mux = pipeline.get_by_name("mux")
-        sink.set_property("location", cfg["url"])
+        # rtmpsink 用 location，srtsink 用 uri
+        if sink.find_property("uri") is not None:
+            sink.set_property("uri", cfg["url"])
+        else:
+            sink.set_property("location", cfg["url"])
         if cfg["audio"]["enabled"]:
             pipeline.get_by_name("asrc").set_property(
                 "device", cfg["audio"]["device"])
@@ -394,16 +404,17 @@ class Streamer:
                     self._set(state="live")
             return Gst.PadProbeReturn.OK
 
-        mux.get_static_pad("src").add_probe(Gst.PadProbeType.BUFFER,
-                                            on_buffer)
+        # 在编码器输出打点：统计实际编码码率，也用于判断出流
+        pipeline.get_by_name("enc").get_static_pad("src").add_probe(
+            Gst.PadProbeType.BUFFER, on_buffer)
         bus = pipeline.get_bus()
 
         # 直播管线要等首个 buffer 才完成 preroll，不能在这里阻塞等 PLAYING
         ret = pipeline.set_state(Gst.State.PLAYING)
         if ret == Gst.StateChangeReturn.FAILURE:
             pipeline.set_state(Gst.State.NULL)
-            raise RuntimeError("GStreamer 管道启动失败"
-                               "（检查 mpph264enc / x264enc / rtmpsink）")
+            raise RuntimeError("Failed to start the GStreamer pipeline "
+                               "(check mpph264enc / x264enc / rtmpsink / srtsink)")
 
         fps = max(1, int(self.camera.config().get("fps", 15)))
         interval = 1.0 / fps
@@ -424,14 +435,15 @@ class Streamer:
                         err, debug = msg.parse_error()
                         raise RuntimeError(mask_text(
                             f"{err.message} {debug}".strip()))
-                    raise RuntimeError("GStreamer 管道已结束")
+                    raise RuntimeError("GStreamer pipeline ended")
 
                 seq, frame = self.camera.latest()
                 if frame is None:
                     time.sleep(0.02)
                     continue
                 if frame.shape[1] != width or frame.shape[0] != height:
-                    raise RuntimeError("采集分辨率变化，需重新建立推流")
+                    raise RuntimeError("Capture resolution changed; "
+                                       "streaming must be restarted")
 
                 if seq != last_seq:
                     last_frame, last_seq = frame, seq
@@ -446,7 +458,7 @@ class Streamer:
                     # 管线还在从 PAUSED 切到 PLAYING，稍后重试
                     time.sleep(0.01)
                 elif flow != Gst.FlowReturn.OK:
-                    raise RuntimeError(f"GStreamer push-buffer 返回 {flow}")
+                    raise RuntimeError(f"GStreamer push-buffer returned {flow}")
                 else:
                     sent += 1
                     window_frames += 1
@@ -471,9 +483,9 @@ class Streamer:
         finally:
             pipeline.set_state(Gst.State.NULL)
             if self._stop.is_set():
-                self._log(f"[stream] 已停止，共发送 {sent} 帧")
+                self._log(f"[stream] Stopped, {sent} frames sent")
             else:
-                self._log(f"[stream] GStreamer 退出，共发送 {sent} 帧")
+                self._log(f"[stream] GStreamer exited, {sent} frames sent")
 
     def _read_progress(self, proc):
         """解析 ffmpeg -progress 输出，拿到真实编码码率."""

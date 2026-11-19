@@ -164,7 +164,7 @@ class CameraWorker(threading.Thread):
                     if not ok:
                         failures += 1
                         if failures >= 15:
-                            self._log("[camera] 连续读帧失败, 重新打开设备")
+                            self._log("[camera] Continuous read failures, reopening device")
                             break
                         time.sleep(0.03)
                         continue
@@ -196,12 +196,12 @@ class CameraWorker(threading.Thread):
             cap = cv2.VideoCapture(device, cv2.CAP_V4L2)
         except Exception as exc:                    # noqa: BLE001
             cap = None
-            self._set_error(f"打开 {device} 异常: {exc}")
+            self._set_error(f"Error opening {device}: {exc}")
             return None
 
         if not cap.isOpened():
-            self._set_error(f"无法打开摄像头 {device}")
-            self._log(f"[camera] 打开失败: {device}")
+            self._set_error(f"Unable to open camera {device}")
+            self._log(f"[camera] Failed to open: {device}")
             return None
 
         fourcc = cfg.get("fourcc") or "MJPG"
@@ -218,8 +218,8 @@ class CameraWorker(threading.Thread):
         ok, frame = cap.read()
         if not ok or frame is None:
             cap.release()
-            self._set_error(f"摄像头 {device} 无图像输出")
-            self._log(f"[camera] {device} 无图像输出")
+            self._set_error(f"Camera {device} produced no frames")
+            self._log(f"[camera] {device} produced no frames")
             return None
 
         frame = self._rotate(frame, cfg.get("rotate", 0))
@@ -231,8 +231,8 @@ class CameraWorker(threading.Thread):
             self._seq += 1
             self._frame = frame
             self._frame_time = time.time()
-        self._log(f"[camera] {device} 打开成功: {w}x{h} "
-                  f"(请求 {cfg['width']}x{cfg['height']}@{cfg['fps']} {fourcc})")
+        self._log(f"[camera] {device} opened: {w}x{h} "
+                  f"(requested {cfg['width']}x{cfg['height']}@{cfg['fps']} {fourcc})")
         return cap
 
     def _set_error(self, msg):
