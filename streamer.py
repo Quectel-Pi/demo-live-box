@@ -3,7 +3,7 @@
 """RTMP / SRT 推流模块.
 
 Python 侧独占摄像头，按固定帧率把 BGR 原始帧补给编码器：
-  - libx264: 通过管道喂给 ffmpeg（软编，默认）
+  - libx264: 优先用 GStreamer x264enc（软编）；无 GStreamer 时回退 ffmpeg 软编
   - mpph264enc: 通过 GStreamer appsrc 送入 Rockchip MPP 硬编（RK35xx）
 这样本地预览、Web 预览、推流三路共用同一个摄像头，不会出现设备被重复打开。
 """
@@ -226,12 +226,15 @@ class Streamer:
         if width <= 0 or height <= 0:
             raise RuntimeError("摄像头未就绪，无法推流")
 
-        if self.config()["encoder"] == "mpph264enc":
-            if Gst is None:
-                self._log(f"[stream] GStreamer 不可用（{_GST_ERROR}），"
-                          "回退 libx264 软编")
-            else:
-                return self._run_gst(width, height)
+        encoder = self.config()["encoder"]
+        if Gst is not None and encoder in ("libx264", "mpph264enc"):
+            # 板端 SAI DMA 描述符池很小，ffmpeg 的 ALSA 采集会持续 xrun 甚至
+            # 卡死在驱动里；GStreamer alsasrc 的采集参数正常，因此软编也走
+            # GStreamer（x264enc 就是 libx264），音视频都能稳定出流
+            return self._run_gst(width, height, encoder)
+        if encoder == "mpph264enc":
+            self._log(f"[stream] GStreamer 不可用（{_GST_ERROR}），"
+                      "回退 libx264 软编")
 
         cmd = self.build_cmd(width, height)
         self._log("[stream] " + " ".join(
@@ -323,21 +326,33 @@ class Streamer:
             else:
                 self._log(f"[stream] ffmpeg 退出 code={proc.returncode}")
 
-    # ---------------- GStreamer / Rockchip MPP 硬编 ----------------
-    def _gst_desc(self, width, height):
+    # ---------------- GStreamer / Rockchip MPP 编解码 ----------------
+    def _gst_desc(self, width, height, encoder="mpph264enc"):
         cfg = self.config()
         fps = max(1, int(self.camera.config().get("fps", 15)))
         bps = max(200, int(cfg["bitrate_kbps"])) * 1000
         gop = max(1, int(fps * max(1, cfg["gop_seconds"])))
+        kbps = max(200, int(cfg["bitrate_kbps"]))
         audio = cfg["audio"]
+
+        if encoder == "mpph264enc":
+            enc = (f"mpph264enc name=enc bps={bps} rc-mode=cbr gop={gop} "
+                   "profile=baseline")
+        else:
+            preset = cfg["preset"]
+            if preset not in ("ultrafast", "superfast", "veryfast", "faster",
+                              "fast", "medium", "slow", "slower", "veryslow"):
+                preset = "veryfast"
+            enc = (f"x264enc name=enc speed-preset={preset} "
+                   "tune=zerolatency "
+                   f"bitrate={kbps} key-int-max={gop} bframes=0")
 
         desc = (
             "appsrc name=src is-live=true do-timestamp=true block=false "
             "format=time max-buffers=2 leaky-type=downstream "
             f"caps=video/x-raw,format=BGR,width={width},height={height},"
             f"framerate={fps}/1 ! videoconvert ! video/x-raw,format=NV12 ! "
-            f"mpph264enc name=enc bps={bps} rc-mode=cbr gop={gop} "
-            "profile=baseline ! h264parse config-interval=-1 ! mux. "
+            f"{enc} ! h264parse config-interval=-1 ! mux. "
         )
         if audio["enabled"]:
             desc += (
@@ -349,12 +364,14 @@ class Streamer:
         desc += "flvmux name=mux streamable=true ! rtmpsink name=sink sync=false"
         return desc
 
-    def _run_gst(self, width, height):
+    def _run_gst(self, width, height, encoder="mpph264enc"):
         cfg = self.config()
-        self._log(f"[stream] GStreamer 硬编 mpph264enc "
+        kind = ("硬编 mpph264enc" if encoder == "mpph264enc"
+                else f"软编 x264enc({cfg['preset']})")
+        self._log(f"[stream] GStreamer {kind} "
                   f"{cfg['bitrate_kbps']}kbps -> {mask_url(cfg['url'])}")
 
-        pipeline = Gst.parse_launch(self._gst_desc(width, height))
+        pipeline = Gst.parse_launch(self._gst_desc(width, height, encoder))
         src = pipeline.get_by_name("src")
         sink = pipeline.get_by_name("sink")
         mux = pipeline.get_by_name("mux")
@@ -386,7 +403,7 @@ class Streamer:
         if ret == Gst.StateChangeReturn.FAILURE:
             pipeline.set_state(Gst.State.NULL)
             raise RuntimeError("GStreamer 管道启动失败"
-                               "（检查 mpph264enc / rtmpsink）")
+                               "（检查 mpph264enc / x264enc / rtmpsink）")
 
         fps = max(1, int(self.camera.config().get("fps", 15)))
         interval = 1.0 / fps

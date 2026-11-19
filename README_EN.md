@@ -16,7 +16,7 @@ preview the video, change parameters, and control streaming.
 - USB UVC camera capture, MJPG 1280x720@15fps by default, auto-detects `/dev/v4l/by-id/*usb*`
 - RTMP / RTMPS / SRT streaming with automatic reconnection
 - Two encoding backends:
-  - `libx264`: software encoding, works out of the box
+  - `libx264`: software encoding (GStreamer `x264enc`), works out of the box
   - `mpph264enc`: Rockchip MPP hardware encoding (GStreamer appsrc), low CPU usage
 - Local OpenCV preview and Web MJPEG preview can run at the same time
 - Web console edits resolution, frame rate, bitrate, encoder, stream URL, and audio; changes apply on save
@@ -29,7 +29,7 @@ preview the video, change parameters, and control streaming.
 demo-live-box/
 ├── main.py            # Entry: capture, streaming, web console, local preview
 ├── camera.py          # V4L2 capture thread (exclusive camera access)
-├── streamer.py        # Streamer: ffmpeg (libx264) / GStreamer (mpph264enc)
+├── streamer.py        # Streamer: GStreamer (x264enc software / mpph264enc hardware)
 ├── webui.py           # Web console + MJPEG preview (standard library only)
 ├── ui.py              # Local preview window
 ├── selftest.py        # Board self-test (camera / audio / 5s local encode)
@@ -91,6 +91,9 @@ gst-inspect-1.0 mpph264enc
 > If the command is missing, use `libx264` first, or install `python3-gi`,
 > `gstreamer1.0-tools`, `gstreamer1.0-plugins-base/good/bad`, and the Rockchip
 > MPP plugins.
+>
+> Software encoding also prefers GStreamer `x264enc` (`gstreamer1.0-plugins-ugly`)
+> and falls back to ffmpeg when it is unavailable.
 
 ### 4. Run
 

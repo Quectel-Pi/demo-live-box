@@ -15,7 +15,7 @@ Web 控制台预览画面、调整参数并控制推流。
 - USB UVC 摄像头采集，默认 MJPG 1280x720@15fps，自动定位 `/dev/v4l/by-id/*usb*`
 - RTMP / RTMPS / SRT 推流，断线自动重连
 - 两种编码后端：
-  - `libx264`：软件编码，开箱即用
+  - `libx264`：软件编码（GStreamer `x264enc`），开箱即用
   - `mpph264enc`：Rockchip MPP 硬件编码（GStreamer appsrc），CPU 占用低
 - 本地预览窗口（OpenCV）与 Web MJPEG 预览可同时使用
 - Web 控制台可修改分辨率、帧率、码率、编码器、推流地址、音频，保存即生效
@@ -28,7 +28,7 @@ Web 控制台预览画面、调整参数并控制推流。
 demo-live-box/
 ├── main.py            # 入口：采集、推流、Web 控制台、本地预览
 ├── camera.py          # V4L2 采集线程（单实例独占摄像头）
-├── streamer.py        # 推流器：ffmpeg(libx264) / GStreamer(mpph264enc)
+├── streamer.py        # 推流器：GStreamer(x264enc 软编 / mpph264enc 硬编)
 ├── webui.py           # Web 控制台 + MJPEG 预览（仅标准库）
 ├── ui.py              # 本地预览窗口
 ├── selftest.py        # 板端自检（摄像头 / 音频 / 本地 5s 编码）
@@ -88,6 +88,9 @@ gst-inspect-1.0 mpph264enc
 > RK3576 官方镜像通常已自带 Rockchip MPP 与 `mpph264enc`。若该命令不存在，
 > 请先使用 `libx264` 软编；也可安装 `python3-gi`、`gstreamer1.0-tools`、
 > `gstreamer1.0-plugins-base/good/bad` 及 Rockchip MPP 插件后再试。
+>
+> 软编同样优先使用 GStreamer 的 `x264enc`（`gstreamer1.0-plugins-ugly`），
+> 缺失时会自动回退到 ffmpeg 软编。
 
 ### 4. 启动
 
