@@ -1,0 +1,36 @@
+{
+  "camera": {
+    "device": "auto",
+    "width": 1280,
+    "height": 720,
+    "fps": 15,
+    "fourcc": "MJPG",
+    "rotate": 270
+  },
+  "stream": {
+    "auto_start": false,
+    "url": "",
+    "encoder": "libx264",
+    "preset": "veryfast",
+    "bitrate_kbps": 2500,
+    "gop_seconds": 2,
+    "audio": {
+      "enabled": true,
+      "device": "plughw:0,0",
+      "bitrate_kbps": 96
+    },
+    "auto_reconnect": true,
+    "retry_delay_s": 3
+  },
+  "web": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "preview_fps": 10,
+    "preview_quality": 70
+  },
+  "preview": {
+    "enabled": true,
+    "window_w": 960,
+    "ui_fps": 15
+  }
+}
